@@ -63,16 +63,14 @@ export class Dispatcher<T> {
   /**
    * Invoke the current middleware
    * 
-   * @param index The curren middleware index
+   * @param i The curren middleware index
    * @param input The value to dispatch
    * @private
    */
-  private _dispatch (index: number, input: T): any {
-    let mw = this._middlewares[index]
+  private _dispatch (i: number, input: T): any {
+    let mw = this._middlewares[i]
 
-    if (mw) return this._invoke(mw, input, () => {
-      return this._dispatch(index + 1, input)
-    })
+    if (mw) return this._invoke(mw, input, () => this._dispatch(i + 1, input))
   }
 
   /**

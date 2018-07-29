@@ -5,6 +5,10 @@ import { Dispatcher } from '../src/dispatcher'
 
 const NOOP = () => {}
 
+function wait (ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 describe('test the middleware dispatcher', () => {
   describe('dispatcher.use(fn)', () => {
     it('should push middlewares in the stack', () => {
@@ -32,11 +36,29 @@ describe('test the middleware dispatcher', () => {
       assert.equal(dispatcher.dispatch({}), 'foo')
     })
 
+    it('should return the middleware output - async', async () => {
+      let dispatcher = new Dispatcher([
+        {
+          process: async (_: any, next: any) => {
+            await wait(2)
+            return next()
+          }
+        },
+        async (_: any, next: any) => {
+          await wait(1)
+          return next()
+        },
+        () => 'foo'
+      ])
+
+      assert.equal(await dispatcher.dispatch({}), 'foo')
+    })
+
     it('should throw the error', () => {
       let dispatcher = new Dispatcher([
         (_: any, next: any) => next(),
         { 
-          process: () => {
+          process () {
             throw new Error('KO')
           }
         },
@@ -44,6 +66,69 @@ describe('test the middleware dispatcher', () => {
       ])
 
       assert.throws(() => dispatcher.dispatch({}))
+    })
+
+    it('should throw the error - async', async () => {
+      let dispatcher = new Dispatcher([
+        async (_: any, next: any) => {
+          await wait(3)
+          return next()
+        },
+        { 
+          async process () {
+            throw new Error('KO')
+          }
+        },
+        () => 'foobar'
+      ])
+
+      try {
+        await dispatcher.dispatch({})
+        assert.fail('should throw the error')
+      } catch (error) {
+        assert.equal(error.message, 'KO')
+      }
+    })
+
+    it('should work with zero middleware', () => {
+      let dispatcher = new Dispatcher()
+
+      assert.equal(dispatcher.dispatch({}), undefined)
+    })
+
+    it('should keep the context', async () => {
+      let obj = {}
+      let dispatcher = new Dispatcher([
+        {
+          process: (ctx: any, next: any) => {
+            assert.strictEqual(ctx, obj)
+            return next()
+          }
+        },
+        (ctx: any, next: any) => {
+          assert.strictEqual(ctx, obj)
+          return 'abc'
+        }
+      ])
+
+      assert.equal(dispatcher.dispatch(obj), 'abc')
+    })
+
+    it('should catch downstream errors', async () => {
+      let dispatcher = new Dispatcher([
+        async (ctx, next) => {
+          try {
+            return next()
+          } catch (error) {
+            return 'OK'
+          }
+        },
+        () => {
+          throw new Error('KO')
+        }
+      ])
+
+      assert.equal(await dispatcher.dispatch({}), 'OK')
     })
   })
 })
