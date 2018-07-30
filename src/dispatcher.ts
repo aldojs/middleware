@@ -2,17 +2,7 @@
 /**
  * Middleware function
  */
-export type MiddlewareFunction<T> = (input: T, next: () => any) => any
-
-/**
- * Middleware object with a `process` method having the same signature 
- * as the middleware function
- */
-export interface MiddlewareObject<T> {
-  process: MiddlewareFunction<T>
-}
-
-export type Middleware<T> = MiddlewareFunction<T> | MiddlewareObject<T>
+export type Middleware<T> = (input: T, next: () => any) => any
 
 /**
  * Middleware dispatcher class
@@ -35,18 +25,23 @@ export class Dispatcher<T> {
    * @public
    */
   public constructor (stack = []) {
+    // TODO: ensures the stack is an array of functions
     this._middlewares = stack
   }
 
   /**
    * Use a middleware
    * 
-   * @param mw The middleware
+   * @param fn The middleware function
+   * @throws `TypeError` if the given middleware is not a function
    * @public
    */
-  public use (mw: Middleware<T>): this {
-    // TODO: ensure the middleware is valid
-    this._middlewares.push(mw)
+  public use (fn: Middleware<T>): this {
+    if (typeof fn !== 'function') {
+      throw new TypeError(`Only a function is allowed as middleware`)
+    }
+
+    this._middlewares.push(fn)
     return this
   }
 
@@ -68,19 +63,8 @@ export class Dispatcher<T> {
    * @private
    */
   private _dispatch (i: number, input: T): any {
-    let mw = this._middlewares[i]
+    let fn = this._middlewares[i]
 
-    if (mw) return this._invoke(mw, input, () => this._dispatch(i + 1, input))
-  }
-
-  /**
-   * Invoke the middleware and return the result
-   * 
-   * @param mw The middleware
-   * @param input The value to dispatch
-   * @private
-   */
-  private _invoke (mw: Middleware<T>, input: T, next: () => any): any {
-    return (typeof mw === 'function') ? mw(input, next) : mw.process(input, next)
+    if (fn) return fn(input, () => this._dispatch(i + 1, input))
   }
 }
