@@ -1,7 +1,7 @@
 {
-  "name": "@aldo/middleware",
-  "version": "0.1.0",
-  "description": "Middleware utility",
+  "name": "@aldojs/middleware",
+  "version": "1.0.0",
+  "description": "Middleware disptacher for Node.js",
   "types": "lib/index.d.ts",
   "main": "lib/index.js",
   "scripts": {
@@ -12,6 +12,10 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/aldojs/middleware.git"
+  },
+  "engines": {
+    "node": ">=8",
+    "npm": ">=5"
   },
   "files": [
     "lib"
