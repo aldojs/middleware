@@ -13,22 +13,51 @@ describe('test the middleware dispatcher', () => {
   describe('dispatcher.use(fn)', () => {
     it('should push middlewares in the stack', () => {
       let stack = new Array()
-      let obj = { process: NOOP }
       let dispatcher = new Dispatcher(stack)
 
-      dispatcher.use(NOOP)
-      dispatcher.use(obj)
+      dispatcher.use(NOOP).use(NOOP)
 
       assert.equal(stack.length, 2)
       assert.equal(stack[0], NOOP)
-      assert.equal(stack[1], obj)
+      assert.equal(stack[0], NOOP)
+    })
+
+    it('should throw if middleware is not a function', () => {
+      let dispatcher = new Dispatcher()
+
+      assert.throws(() => {
+        dispatcher.use([] as any)
+      })
+
+      assert.throws(() => {
+        dispatcher.use({} as any)
+      })
+
+      assert.throws(() => {
+        dispatcher.use(123 as any)
+      })
+
+      assert.throws(() => {
+        dispatcher.use(null as any)
+      })
+
+      assert.throws(() => {
+        dispatcher.use(true as any)
+      })
+
+      assert.throws(() => {
+        dispatcher.use('foo' as any)
+      })
+
+      assert.throws(() => {
+        dispatcher.use(undefined as any)
+      })
     })
   })
 
   describe('dispatcher.dispatch(input)', () => {
     it('should return the middleware output', () => {
       let dispatcher = new Dispatcher([
-        { process: (_: any, next: any) => next() },
         (_: any, next: any) => next(),
         () => 'foo'
       ])
@@ -38,11 +67,9 @@ describe('test the middleware dispatcher', () => {
 
     it('should return the middleware output - async', async () => {
       let dispatcher = new Dispatcher([
-        {
-          process: async (_: any, next: any) => {
-            await wait(2)
-            return next()
-          }
+        async (_: any, next: any) => {
+          await wait(2)
+          return next()
         },
         async (_: any, next: any) => {
           await wait(1)
@@ -57,12 +84,8 @@ describe('test the middleware dispatcher', () => {
     it('should throw the error', () => {
       let dispatcher = new Dispatcher([
         (_: any, next: any) => next(),
-        { 
-          process () {
-            throw new Error('KO')
-          }
-        },
-        () => 'foobar'
+        () => { throw new Error('KO') },
+        () => assert.fail('should not be called')
       ])
 
       assert.throws(() => dispatcher.dispatch({}))
@@ -74,12 +97,10 @@ describe('test the middleware dispatcher', () => {
           await wait(3)
           return next()
         },
-        { 
-          async process () {
-            throw new Error('KO')
-          }
+        async () => {
+          throw new Error('KO')
         },
-        () => 'foobar'
+        () => assert.fail('should not be called')
       ])
 
       try {
@@ -99,11 +120,9 @@ describe('test the middleware dispatcher', () => {
     it('should keep the context', async () => {
       let obj = {}
       let dispatcher = new Dispatcher([
-        {
-          process: (ctx: any, next: any) => {
-            assert.strictEqual(ctx, obj)
-            return next()
-          }
+        (ctx: any, next: any) => {
+          assert.strictEqual(ctx, obj)
+          return next()
         },
         (ctx: any, next: any) => {
           assert.strictEqual(ctx, obj)
@@ -125,7 +144,8 @@ describe('test the middleware dispatcher', () => {
         },
         () => {
           throw new Error('KO')
-        }
+        },
+        () => assert.fail('should not be called')
       ])
 
       assert.equal(await dispatcher.dispatch({}), 'OK')
