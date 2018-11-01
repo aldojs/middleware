@@ -1,7 +1,7 @@
 {
   "name": "@aldojs/middleware",
   "version": "1.0.0",
-  "description": "Middleware disptacher for Node.js",
+  "description": "Middleware disptacher",
   "types": "lib/index.d.ts",
   "main": "lib/index.js",
   "scripts": {
@@ -21,7 +21,6 @@
     "lib"
   ],
   "keywords": [
-    "aldo",
     "middleware",
     "dispatcher"
   ],
@@ -33,9 +32,9 @@
   "homepage": "https://github.com/aldojs/middleware#readme",
   "devDependencies": {
     "@types/mocha": "^2.2.48",
-    "@types/node": "^8.10.20",
+    "@types/node": "^8.10.36",
     "mocha": "^5.2.0",
     "ts-node": "^5.0.1",
-    "typescript": "^2.9.2"
+    "typescript": "^3.1.5"
   }
 }
