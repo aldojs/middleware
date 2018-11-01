@@ -1,14 +1,6 @@
 
-/**
- * Middleware function
- */
 export type Middleware<T> = (input: T, next: () => any) => any
 
-/**
- * Middleware dispatcher class
- * 
- * Register middlewares, and dispatch the given inputs to them
- */
 export class Dispatcher<T> {
   /**
    * The middleware stack
@@ -24,8 +16,9 @@ export class Dispatcher<T> {
    * @constructor
    * @public
    */
-  public constructor (stack = []) {
+  public constructor (stack: Middleware<T>[]) {
     // TODO: ensures the stack is an array of functions
+
     this._middlewares = stack
   }
 

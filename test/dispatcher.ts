@@ -1,29 +1,27 @@
 
 import 'mocha'
 import * as assert from 'assert'
-import { Dispatcher } from '../src/dispatcher'
+import { createDispatcher } from '../src'
 
 const NOOP = () => {}
 
-function wait (ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
+const wait = (ms: number) => new Promise((ok) => setTimeout(ok, ms))
 
 describe('test the middleware dispatcher', () => {
   describe('dispatcher.use(fn)', () => {
     it('should push middlewares in the stack', () => {
       let stack = new Array()
-      let dispatcher = new Dispatcher(stack)
+      let dispatcher = createDispatcher(stack)
 
       dispatcher.use(NOOP).use(NOOP)
 
       assert.equal(stack.length, 2)
       assert.equal(stack[0], NOOP)
-      assert.equal(stack[0], NOOP)
+      assert.equal(stack[1], NOOP)
     })
 
     it('should throw if middleware is not a function', () => {
-      let dispatcher = new Dispatcher()
+      let dispatcher = createDispatcher()
 
       assert.throws(() => {
         dispatcher.use([] as any)
@@ -57,8 +55,8 @@ describe('test the middleware dispatcher', () => {
 
   describe('dispatcher.dispatch(input)', () => {
     it('should return the middleware output', () => {
-      let dispatcher = new Dispatcher([
-        (_: any, next: any) => next(),
+      let dispatcher = createDispatcher([
+        (_, next) => next(),
         () => 'foo'
       ])
 
@@ -66,12 +64,12 @@ describe('test the middleware dispatcher', () => {
     })
 
     it('should return the middleware output - async', async () => {
-      let dispatcher = new Dispatcher([
-        async (_: any, next: any) => {
+      let dispatcher = createDispatcher([
+        async (_, next) => {
           await wait(2)
           return next()
         },
-        async (_: any, next: any) => {
+        async (_, next) => {
           await wait(1)
           return next()
         },
@@ -82,8 +80,8 @@ describe('test the middleware dispatcher', () => {
     })
 
     it('should throw the error', () => {
-      let dispatcher = new Dispatcher([
-        (_: any, next: any) => next(),
+      let dispatcher = createDispatcher([
+        (_, next) => next(),
         () => { throw new Error('KO') },
         () => assert.fail('should not be called')
       ])
@@ -92,8 +90,8 @@ describe('test the middleware dispatcher', () => {
     })
 
     it('should throw the error - async', async () => {
-      let dispatcher = new Dispatcher([
-        async (_: any, next: any) => {
+      let dispatcher = createDispatcher([
+        async (_, next) => {
           await wait(3)
           return next()
         },
@@ -112,20 +110,20 @@ describe('test the middleware dispatcher', () => {
     })
 
     it('should work with zero middleware', () => {
-      let dispatcher = new Dispatcher()
+      let dispatcher = createDispatcher()
 
       assert.equal(dispatcher.dispatch({}), undefined)
     })
 
-    it('should keep the context', async () => {
+    it('should keep the input', async () => {
       let obj = {}
-      let dispatcher = new Dispatcher([
-        (ctx: any, next: any) => {
-          assert.strictEqual(ctx, obj)
+      let dispatcher = createDispatcher([
+        (input, next) => {
+          assert.strictEqual(input, obj)
           return next()
         },
-        (ctx: any, next: any) => {
-          assert.strictEqual(ctx, obj)
+        (input) => {
+          assert.strictEqual(input, obj)
           return 'abc'
         }
       ])
@@ -134,8 +132,8 @@ describe('test the middleware dispatcher', () => {
     })
 
     it('should catch downstream errors', async () => {
-      let dispatcher = new Dispatcher([
-        async (ctx, next) => {
+      let dispatcher = createDispatcher([
+        async (_, next) => {
           try {
             return next()
           } catch (error) {
