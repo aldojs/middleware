@@ -7,6 +7,6 @@ import { Dispatcher } from './dispatcher'
  * @param stack 
  * @public
  */
-export function createDispatcher (stack = []) {
+export function createDispatcher<T> (stack = []): Dispatcher<T> {
   return new Dispatcher(stack)
 }
