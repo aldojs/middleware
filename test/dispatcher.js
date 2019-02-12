@@ -1,11 +1,13 @@
 
-import 'mocha'
-import * as assert from 'assert'
-import { createDispatcher } from '../src'
+'use strict'
+
+const assert = require('assert')
+const { createDispatcher } = require('../lib')
 
 const NOOP = () => {}
 
-const wait = (ms: number) => new Promise((ok) => setTimeout(ok, ms))
+const wait = (ms) => new Promise((ok) => setTimeout(ok, ms))
+
 
 describe('test the middleware dispatcher', () => {
   describe('dispatcher.use(fn)', () => {
@@ -24,31 +26,31 @@ describe('test the middleware dispatcher', () => {
       let dispatcher = createDispatcher()
 
       assert.throws(() => {
-        dispatcher.use([] as any)
+        dispatcher.use([])
       })
 
       assert.throws(() => {
-        dispatcher.use({} as any)
+        dispatcher.use({})
       })
 
       assert.throws(() => {
-        dispatcher.use(123 as any)
+        dispatcher.use(123)
       })
 
       assert.throws(() => {
-        dispatcher.use(null as any)
+        dispatcher.use(null)
       })
 
       assert.throws(() => {
-        dispatcher.use(true as any)
+        dispatcher.use(true)
       })
 
       assert.throws(() => {
-        dispatcher.use('foo' as any)
+        dispatcher.use('foo')
       })
 
       assert.throws(() => {
-        dispatcher.use(undefined as any)
+        dispatcher.use(undefined)
       })
     })
   })
