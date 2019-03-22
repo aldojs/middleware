@@ -5,7 +5,7 @@
  * @param fns An array of middleware functions
  * @public
  */
-export declare function compose(fns: Middleware[]): Middleware;
+export declare function compose(fns: Function[]): Handler;
 
 /**
  * Initialize a new dispatcher instance
@@ -29,10 +29,19 @@ export declare class Dispatcher {
    * Use a middleware
    *
    * @param fn The middleware function
-   * @throws `TypeError` if the given middleware is not a function
+   * @throws if the given middleware is not a function
    * @public
    */
   use(fn: Middleware): this;
+
+  /**
+   * Set the default handler.
+   * 
+   * @param fn 
+   * @throws if the handler is not a function.
+   * @public
+   */
+  setHandler(fn: Handler);
 
   /**
    * Dispatch the given input to middlewares
@@ -43,4 +52,6 @@ export declare class Dispatcher {
   dispatch(input: any): any;
 }
 
-export declare type Middleware = (input: any, next: () => any) => any;
+export declare type Middleware = (fn: Handler) => Handler;
+
+export declare type Handler = (input: any) => any;
