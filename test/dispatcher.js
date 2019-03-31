@@ -11,15 +11,15 @@ const wait = (ms) => new Promise((ok) => setTimeout(ok, ms))
 
 describe('test the middleware dispatcher', () => {
   describe('dispatcher.use(fn)', () => {
-    it('should push middlewares in the stack', () => {
-      let stack = new Array()
-      let dispatcher = createDispatcher(stack)
+    it('should push middlewares in the list', () => {
+      let fns = new Array()
+      let dispatcher = createDispatcher(fns)
 
       dispatcher.use(NOOP).use(NOOP)
 
-      assert.equal(stack.length, 2)
-      assert.equal(stack[0], NOOP)
-      assert.equal(stack[1], NOOP)
+      assert.equal(fns.length, 2)
+      assert.equal(fns[0], NOOP)
+      assert.equal(fns[1], NOOP)
     })
 
     it('should throw if middleware is not a function', () => {
@@ -58,50 +58,56 @@ describe('test the middleware dispatcher', () => {
   describe('dispatcher.dispatch(input)', () => {
     it('should return the middleware output', () => {
       let dispatcher = createDispatcher([
-        (_, next) => next(),
-        () => 'foo'
+        (next) => (o) => next(o) + 'bar'
       ])
 
-      assert.equal(dispatcher.dispatch({}), 'foo')
+      dispatcher.setHandler((input) => input)
+
+      assert.equal(dispatcher.dispatch('foo'), 'foobar')
     })
 
     it('should return the middleware output - async', async () => {
       let dispatcher = createDispatcher([
-        async (_, next) => {
+        (next) => async (_) => {
           await wait(2)
-          return next()
+          let r = await next(_)
+          return r.toLowerCase()
         },
-        async (_, next) => {
+        (next) => async (_) => {
           await wait(1)
-          return next()
-        },
-        () => 'foo'
+          let r = await next(_)
+          return r.toUpperCase()
+        }
       ])
+
+      dispatcher.setHandler(() => 'foo')
 
       assert.equal(await dispatcher.dispatch({}), 'foo')
     })
 
     it('should throw the error', () => {
       let dispatcher = createDispatcher([
-        (_, next) => next(),
-        () => { throw new Error('KO') },
-        () => assert.fail('should not be called')
+        (next) => next,
+        () => () => { throw new Error('KO') }
       ])
+
+      dispatcher.setHandler(() => assert.fail('should not be called'))
 
       assert.throws(() => dispatcher.dispatch({}))
     })
 
     it('should throw the error - async', async () => {
       let dispatcher = createDispatcher([
-        async (_, next) => {
+        (next) => async (_) => {
           await wait(3)
           return next()
         },
-        async () => {
+        () => async () => {
           throw new Error('KO')
-        },
-        () => assert.fail('should not be called')
+        }
       ])
+
+      dispatcher.setHandler(() => assert.fail('should not be called'))
 
       try {
         await dispatcher.dispatch({})
@@ -119,34 +125,33 @@ describe('test the middleware dispatcher', () => {
 
     it('should keep the input', async () => {
       let obj = {}
-      let dispatcher = createDispatcher([
-        (input, next) => {
-          assert.strictEqual(input, obj)
-          return next()
-        },
-        (input) => {
-          assert.strictEqual(input, obj)
-          return 'abc'
-        }
-      ])
+      let dispatcher = createDispatcher()
+
+      dispatcher.use((next) => (input) => {
+        assert.strictEqual(input, obj)
+        return next(input)
+      })
+
+      dispatcher.setHandler(() => 'abc')
 
       assert.equal(dispatcher.dispatch(obj), 'abc')
     })
 
     it('should catch downstream errors', async () => {
       let dispatcher = createDispatcher([
-        async (_, next) => {
+        (next) => async () => {
           try {
             return next()
           } catch (error) {
             return 'OK'
           }
         },
-        () => {
+        () => () => {
           throw new Error('KO')
-        },
-        () => assert.fail('should not be called')
+        }
       ])
+
+      dispatcher.setHandler(() => assert.fail('should not be called'))
 
       assert.equal(await dispatcher.dispatch({}), 'OK')
     })
